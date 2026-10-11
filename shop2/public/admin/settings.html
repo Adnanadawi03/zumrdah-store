@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>لوحة التاجر — إعدادات المتجر</title>
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header id="hdr"></header>
+<div class="admin-layout">
+<nav id="adminSide" class="admin-side"></nav>
+<main id="app">جاري التحميل...</main>
+</div>
+<div id="ftr"></div>
+<script src="../app.js"></script>
+<script src="admin.js"></script>
+<script>
+(async()=>{
+  if(!await requireAdmin())return;
+  await loadStore();adminChrome("settings.html");
+  const S=STORE.settings;
+  $("#app").innerHTML=`<div class="ord">
+    <label>اسم المتجر</label><input id="s1" value="${esc(S.name)}">
+    <label>الشعار (الجملة الترحيبية)</label><input id="s2" value="${esc(S.tag)}">
+    <label>نص العرض (فاضي = بدون بانر)</label><input id="s3" value="${esc(S.promo)}">
+    <label>كود الخصم (فاضي = بدون كود)</label><input id="s4" value="${esc(S.code)}">
+    <label>نسبة الخصم %</label><input id="s5" type="number" value="${S.pct}">
+    <label>رقم الواتساب (مثال 962795360292)</label><input id="s6" value="${esc(S.phone)}">
+    <label>رابط فيسبوك (اختياري)</label><input id="s8" value="${esc(S.fb)}" placeholder="https://facebook.com/...">
+    <label>رابط انستغرام (اختياري)</label><input id="s9" value="${esc(S.ig)}" placeholder="https://instagram.com/...">
+    <label>رابط تيك توك (اختياري)</label><input id="s10" value="${esc(S.tiktok)}" placeholder="https://tiktok.com/@...">
+    <label>التصنيفات (كل سطر تصنيف)</label><textarea id="s7" rows="6">${esc(S.cats.join("\n"))}</textarea>
+    <label style="margin-top:14px">صور خلفية التصنيفات (تظهر بالرئيسية)</label>
+    <div id="catImgs"></div>
+    <button class="btn" id="ss" style="margin-top:10px">حفظ الإعدادات</button>
+  </div>`;
+  const catImages={...(S.catImages||{})};
+  function renderCatImgs(){
+    $("#catImgs").innerHTML=S.cats.map((c,i)=>`<div class="row" style="align-items:center">
+      <span style="width:120px">${esc(c)}</span>
+      ${catImages[c]?`<img src="${catImages[c]}" style="width:44px;height:44px;object-fit:cover;border-radius:6px">`:'<span class="mu" style="width:44px">بلا صورة</span>'}
+      <input type="file" accept="image/*" data-cat="${i}" style="flex:1">
+      ${catImages[c]?`<button class="btn r s" data-clear="${i}">حذف</button>`:""}
+    </div>`).join("");
+    $("#catImgs").querySelectorAll("[data-cat]").forEach(inp=>inp.onchange=async e=>{
+      const c=S.cats[+inp.dataset.cat],f=e.target.files[0];if(!f)return;
+      catImages[c]=await shrinkImg(f);renderCatImgs();
+    });
+    $("#catImgs").querySelectorAll("[data-clear]").forEach(b=>b.onclick=()=>{delete catImages[S.cats[+b.dataset.clear]];renderCatImgs()});
+  }
+  function shrinkImg(f){return new Promise(r=>{const i=new Image();i.onload=()=>{const s=Math.min(1,500/Math.max(i.width,i.height)),c=document.createElement("canvas");c.width=i.width*s;c.height=i.height*s;c.getContext("2d").drawImage(i,0,0,c.width,c.height);r(c.toDataURL("image/jpeg",.75))};i.src=URL.createObjectURL(f)})}
+  renderCatImgs();
+  $("#ss").onclick=async()=>{
+    const body={name:$("#s1").value.trim()||"متجري",tag:$("#s2").value,promo:$("#s3").value,code:$("#s4").value.trim(),pct:+$("#s5").value||0,phone:$("#s6").value.trim(),fb:$("#s8").value.trim(),ig:$("#s9").value.trim(),tiktok:$("#s10").value.trim(),cats:$("#s7").value.split("\n").map(x=>x.trim()).filter(Boolean),catImages};
+    try{await api("PUT","/api/settings",body);toast("تم الحفظ")}catch(e){toast(e.message)}
+  };
+})();
+</script>
+</body>
+</html>

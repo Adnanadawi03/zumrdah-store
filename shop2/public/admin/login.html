@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>دخول التاجر</title>
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<main style="padding-top:60px">
+  <div class="box">
+    <h3>دخول التاجر</h3>
+    <label>كلمة السر</label><input id="pw" type="password">
+    <div class="row" style="margin-top:10px"><button class="btn" id="go">دخول</button><a class="btn o" href="../index.html">رجوع للموقع</a></div>
+  </div>
+</main>
+<script src="../app.js"></script>
+<script>
+(async()=>{
+  const me=await api("GET","/api/me").catch(()=>({admin:false}));
+  if(me.admin){location.href="orders.html";return}
+})();
+$("#go").onclick=async()=>{
+  try{await api("POST","/api/login",{password:$("#pw").value});location.href="orders.html"}catch(e){toast(e.message)}
+};
+$("#pw").onkeydown=e=>{if(e.key==="Enter")$("#go").click()};
+</script>
+</body>
+</html>

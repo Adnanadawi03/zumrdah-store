@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>تواصل معنا</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+.contact-wrap{min-height:calc(100vh - 210px);display:flex;align-items:center;justify-content:center}
+.contact-box{max-width:440px;width:100%;text-align:center;display:flex;flex-direction:column;gap:16px;background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:36px 30px}
+.contact-box h3{margin:0;font-family:'Libre Baskerville',Georgia,serif;font-weight:400;font-size:26px}
+.contact-box p{margin:0}
+.wa-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-size:15px}
+.wa-btn svg{width:18px;height:18px;fill:#fff}
+.contact-box hr{border:none;border-top:1px solid var(--bd);width:100%;margin:2px 0}
+.contact-box .store-info{margin:0;line-height:1.8}
+</style>
+</head>
+<body>
+<header id="hdr"></header>
+<main id="app">جاري التحميل...</main>
+<div id="ftr"></div>
+<script src="app.js"></script>
+<script>
+(async()=>{
+  await loadStore();chrome("contact");
+  const S=STORE.settings,n=(S.phone||"").replace(/\D/g,"");
+  $("#app").innerHTML=`<div class="contact-wrap"><div class="contact-box">
+    <h3>تواصل معنا</h3>
+    <p class="mu">إذا كان لديك أي استفسار حول المنتجات أو الطلبات أو طرق الدفع أو التوصيل، لا تترددي في التواصل معنا وسنسعد بخدمتك.</p>
+    ${n?`<a class="wa-btn" href="https://wa.me/${n}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 00-7.8 13.5L3 21l4.7-1.2A9 9 0 1012 3zm0 1.8a7.2 7.2 0 11-3.8 13.3l-.3-.2-2.7.7.7-2.6-.2-.3A7.2 7.2 0 0112 4.8z"/></svg>راسلنا عبر واتساب</a>`:""}
+    <hr>
+    <p class="store-info"><b>${esc(S.name)} Store</b><br>عمّان، الأردن${S.phone?`<br>${esc(S.phone)}`:""}</p>
+  </div></div>`;
+})();
+</script>
+</body>
+</html>

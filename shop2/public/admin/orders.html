@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>لوحة التاجر — الطلبات</title>
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<style>
+#printArea{display:none}
+@media print{
+  body,html{background:#fff}
+  body *{visibility:hidden}
+  #printArea,#printArea *{visibility:visible}
+  #printArea{display:block;position:absolute;top:0;right:0;left:0;background:#fff;direction:rtl;font-family:Tahoma,Arial,sans-serif}
+  #printArea h2{text-align:center;margin-bottom:4px}
+  #printArea .p-meta{text-align:center;color:#555;font-size:12px;margin-bottom:18px}
+  #printArea table{width:100%;border-collapse:collapse;font-size:12px}
+  #printArea th,#printArea td{border:1px solid #999;padding:6px 8px;text-align:right;vertical-align:top}
+  #printArea th{background:#eee}
+}
+</style>
+</head>
+<body>
+<header id="hdr"></header>
+<div class="admin-layout">
+<nav id="adminSide" class="admin-side"></nav>
+<main id="app">جاري التحميل...</main>
+</div>
+<div id="ftr"></div>
+<div id="printArea"></div>
+<script src="../app.js"></script>
+<script src="admin.js"></script>
+<script>
+let orders=[],ordFilter="all";
+function buildPrintArea(list){
+  const rows=list.map(o=>`<tr>
+    <td>${new Date(o.ts).toLocaleString("ar-JO")}</td>
+    <td>${esc(o.name)}<br>${esc(o.phone)}</td>
+    <td>${esc(o.gov)}<br>${esc(o.addr)}</td>
+    <td>${o.items.map(c=>`${esc(c.name)} × ${c.qty}${c.addons.length?` (${esc(c.addons.join("، "))})`:""}`).join("<br>")}</td>
+    <td>${jd(o.sub)}</td>
+    <td>${o.discount?jd(o.discount):"-"}</td>
+    <td>${jd(o.delivery)}</td>
+    <td><b>${jd(o.total)}</b></td>
+    <td>${esc(ORD_ST[o.status]||o.status)}</td>
+  </tr>`).join("");
+  $("#printArea").innerHTML=`<h2>${esc(STORE.settings.name||"المتجر")} — تقرير الطلبات</h2>
+    <div class="p-meta">تاريخ التصدير: ${new Date().toLocaleString("ar-JO")} — عدد الطلبات: ${list.length}${ordFilter!=="all"?` — الحالة: ${esc(ORD_ST[ordFilter]||ordFilter)}`:""}</div>
+    <table><thead><tr><th>التاريخ</th><th>العميل</th><th>العنوان</th><th>المنتجات</th><th>المجموع</th><th>الخصم</th><th>التوصيل</th><th>الإجمالي</th><th>الحالة</th></tr></thead>
+    <tbody>${rows||`<tr><td colspan="9" style="text-align:center">لا توجد طلبات</td></tr>`}</tbody></table>`;
+}
+function render(){
+  const ft=(k,l)=>`<button class="btn s ${ordFilter===k?"":"o"}" data-f="${k}">${l}</button>`;
+  const tabs=`<div class="tabs">${ft("all","الكل")}${Object.entries(ORD_ST).map(([k,l])=>ft(k,l+" ("+orders.filter(o=>o.status===k).length+")")).join("")}<button class="btn s" id="pdfBtn" style="margin-inline-start:auto">⬇ تحميل PDF</button></div>`;
+  const list=orders.filter(o=>ordFilter==="all"||o.status===ordFilter);
+  const body=list.map(o=>`<div class="ord">
+    <div class="row"><b>${esc(o.name)} — ${esc(o.phone)}</b><span class="tag ${o.status==="delivered"?"ok":o.status==="cancelled"?"c":""}">${esc(ORD_ST[o.status]||o.status)}</span></div>
+    <div class="mu">${esc(o.gov)} — ${esc(o.addr)} — ${new Date(o.ts).toLocaleString("ar-JO")}</div>
+    ${o.items.map(c=>`<div>• ${esc(c.name)} × ${c.qty} ${c.addons.length?`<span class="mu">(${esc(c.addons.join("، "))})</span>`:""}</div>`).join("")}
+    <div class="mu">توصيل: ${jd(o.delivery)}${o.discount?" — خصم: "+jd(o.discount):""}</div>
+    <div class="row tot"><span>الإجمالي ${jd(o.total)}</span><span>
+      <select data-st="${o.id}">${Object.entries(ORD_ST).map(([k,l])=>`<option value="${k}" ${o.status===k?"selected":""}>${l}</option>`).join("")}</select>
+      <button class="btn r s" data-del="${o.id}">حذف</button></span></div></div>`).join("")||'<p class="mu">لا توجد طلبات بهذا التصنيف.</p>';
+  $("#app").innerHTML=tabs+body;
+  $("#app").querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{ordFilter=b.dataset.f;render()});
+  $("#app").querySelectorAll("[data-st]").forEach(s=>s.onchange=async()=>{try{await api("PATCH","/api/orders/"+s.dataset.st,{status:s.value});await refresh()}catch(e){toast(e.message)}});
+  $("#app").querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(confirm("حذف الطلب؟")){await api("DELETE","/api/orders/"+b.dataset.del);await refresh()}});
+  $("#pdfBtn").onclick=()=>{buildPrintArea(list);window.print()};
+}
+async function refresh(){orders=await api("GET","/api/orders");render()}
+(async()=>{
+  if(!await requireAdmin())return;
+  await loadStore();adminChrome("orders.html");
+  await refresh();
+  setInterval(()=>{if(!document.querySelector(".box"))refresh().catch(()=>{})},20000);
+})();
+</script>
+</body>
+</html>

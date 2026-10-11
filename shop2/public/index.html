@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>متجري</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="hdr"></header>
+<main id="app">جاري التحميل...</main>
+<div id="ftr"></div>
+<script src="app.js"></script>
+<script>
+function tiles(){
+  return STORE.settings.cats.map(c=>{
+    const bg=STORE.settings.catImages&&STORE.settings.catImages[c];
+    const p=STORE.products.find(x=>x.cat===c&&x.imgs&&x.imgs[0]);
+    const img=bg||(p&&p.imgs[0]);
+    const soon=c==="اكسسوارات";
+    const count=STORE.products.filter(x=>x.cat===c).length;
+    return `<a class="tile" href="shop.html?cat=${encodeURIComponent(c)}" ${img?`style="background-image:url(${img})"`:""}>${soon?'<span class="soon">قريباً</span>':""}
+      <div class="tile-overlay">
+        <div class="tile-name">${esc(c)}</div>
+        <div class="tile-count">${count} منتج</div>
+        <span class="tile-btn">تسوق الآن</span>
+      </div>
+    </a>`;
+  }).join("");
+}
+(async()=>{
+  await loadStore();
+  chrome("home");
+  const S=STORE.settings;
+  $("#app").innerHTML=`
+    <div class="hero">
+      <img class="badge-logo" src="logo.png" alt="${esc(S.name)}">
+      <div><h2 style="margin:0 0 12px;font-weight:400">${esc(S.tag)}</h2><a class="ol" href="shop.html">Shop Now</a></div>
+    </div>
+    ${S.promo?`<div class="promo">${esc(S.promo)}${S.code?`<br><span>Code: ${esc(S.code)}</span>`:""}</div>`:""}
+    <div class="cat-carousel">
+      <div class="cat-carousel-head">
+        <div class="cat-arrow prev" id="catPrev"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></div>
+        <div class="cat-arrow next" id="catNext"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></div>
+      </div>
+      <div class="cat-track" id="catTrack">${tiles()}</div>
+    </div>
+    <h3>أحدث المنتجات</h3>
+    <div class="grid">${STORE.products.slice(-4).reverse().map(cardHTML).join("")||'<div class="empty">منتجات جديدة قريباً!</div>'}</div>`;
+  const track=$("#catTrack");
+  const step=()=>track.clientWidth*0.9;
+  $("#catPrev").onclick=()=>track.scrollBy({left:-step(),behavior:"smooth"});
+  $("#catNext").onclick=()=>track.scrollBy({left:step(),behavior:"smooth"});
+})();
+</script>
+</body>
+</html>

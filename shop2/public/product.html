@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>المنتج</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<style>
+.pd-wrap{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start;max-width:1000px;margin:0 auto}
+.pd-back{display:flex;align-items:center;gap:4px;font-size:14px;color:var(--tx);margin-bottom:28px;cursor:pointer;width:fit-content}
+.pd-back svg{width:16px;height:16px}
+.pd-img{width:100%;aspect-ratio:1;border-radius:4px;overflow:hidden;background:var(--card);border:1px solid var(--bd)}
+.pd-img img{width:100%;height:100%;object-fit:cover;display:block}
+.pd-name{font-family:'Libre Baskerville',Georgia,serif;font-weight:400;font-size:42px;margin:0 0 10px;line-height:1.15}
+.pd-price{font-size:20px;color:var(--tx);margin-bottom:28px}
+.pd-field{margin-bottom:22px}
+.pd-field label{display:block;font-size:14px;margin-bottom:8px;color:var(--tx)}
+.pd-select{width:100%;border:1px solid var(--tx);border-radius:2px;padding:12px 14px;background:var(--bg);appearance:none;font-size:15px}
+.pd-qty{width:80px;border:none;border-bottom:1px solid var(--tx);background:transparent;padding:6px 2px;font-size:15px;border-radius:0}
+.pd-actions{display:flex;gap:14px;margin-top:10px}
+.pd-actions button{flex:1;padding:14px 10px;border:1px solid var(--tx);background:transparent;color:var(--tx);font-family:'Libre Baskerville',Georgia,serif;font-size:15px;cursor:pointer;border-radius:2px;transition:background .2s ease,color .2s ease}
+.pd-actions button:hover{background:var(--tx);color:var(--bg)}
+.pd-actions button:disabled{opacity:.4;cursor:not-allowed}
+.pd-actions button:disabled:hover{background:transparent;color:var(--tx)}
+.pd-stock{font-size:13px;color:var(--mu);margin:-14px 0 20px}
+.pd-stock.out{color:#b91c1c}
+@media(max-width:720px){.pd-wrap{grid-template-columns:1fr}}
+</style>
+<header id="hdr"></header>
+<main id="app">جاري التحميل...</main>
+<div id="ftr"></div>
+<script src="app.js"></script>
+<script>
+(async()=>{
+  await loadStore();chrome("shop");
+  const id=new URLSearchParams(location.search).get("id");
+  const p=STORE.products.find(x=>x.id===id);
+  if(!p){$("#app").innerHTML='<p class="mu">المنتج غير موجود. <a href="shop.html">رجوع للمتجر</a></p>';return}
+  const hasAddons=(p.addons||[]).length>0;
+  const tracked=p.stock!==null&&p.stock!==undefined;
+  const out=tracked&&p.stock<=0;
+  $("#app").innerHTML=`<div class="pd-wrap">
+    <div style="grid-column:1/-1"><a class="pd-back" href="shop.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg>كل المنتجات</a></div>
+    <div class="pd-img">${p.imgs&&p.imgs[0]?`<img src="${p.imgs[0]}">`:'<div class="ph" style="aspect-ratio:1"></div>'}</div>
+    <div>
+      <h1 class="pd-name">${esc(p.name)}</h1>
+      <div class="pd-price" id="pdPrice">${displayPrice(p)}</div>
+      ${tracked?`<div class="pd-stock ${out?"out":""}">${out?"نفذت الكمية":"متبقي "+p.stock+" بس"}</div>`:""}
+      ${hasAddons?`<div class="pd-field"><label>الإضافات</label><select class="pd-select" id="ad"><option value="-1">${p.price>0?"-- بدون إضافة --":"-- اختر --"}</option>${p.addons.map((x,i)=>`<option value="${i}">${esc(x.name)} (${p.price>0?"+"+jd(x.price):jd(x.price)})</option>`).join("")}</select></div>`:""}
+      <div class="pd-field"><label>الكمية</label><input class="pd-qty" type="number" id="q" min="1" ${tracked?`max="${p.stock}"`:""} value="1" ${out?"disabled":""}></div>
+      <div class="pd-actions">
+        <button id="buyNow" ${out?"disabled":""}>${out?"غير متوفر":"اشتري الآن"}</button>
+        <button id="addc" ${out?"disabled":""}>أضف إلى السلة</button>
+      </div>
+    </div>
+  </div>`;
+  const buildItem=()=>{
+    const sel=hasAddons&&$("#ad").value!=="-1"?[p.addons[+$("#ad").value]]:[];
+    const unit=+p.price+sel.reduce((s,x)=>s+ +x.price,0);
+    let qty=Math.max(1,+$("#q").value||1);
+    if(tracked)qty=Math.min(qty,Math.max(1,p.stock));
+    return {pid:p.id,name:p.name,addons:sel.map(x=>x.name),unit,qty};
+  };
+  if(hasAddons)$("#ad").onchange=()=>{$("#pdPrice").textContent=jd(buildItem().unit)};
+  if(!out){
+    $("#addc").onclick=()=>{
+      const c=cart();c.push(buildItem());setCart(c);
+      toast("تمت الإضافة للسلة، بتقدر تكمل تسوّق أو تروح للسلة");
+      $("#cc").textContent=cartCount();
+    };
+    $("#buyNow").onclick=()=>{
+      const c=cart();c.push(buildItem());setCart(c);
+      location.href="checkout.html";
+    };
+  }
+})();
+</script>
+</body>
+</html>

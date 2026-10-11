@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>المتجر</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="hdr"></header>
+<main id="app">جاري التحميل...</main>
+<div id="ftr"></div>
+<script src="app.js"></script>
+<script>
+function render(){
+  const p=new URLSearchParams(location.search),cat=p.get("cat")||"",q=p.get("q")||"";
+  const list=STORE.products.filter(x=>(!cat||x.cat===cat)&&(!q||x.name.includes(q)));
+  $("#app").innerHTML=`<div class="shop">
+    <div class="side">
+      <a class="${cat?"":"on"}" href="shop.html">كل المنتجات</a>
+      ${STORE.settings.cats.map(c=>`<a class="${cat===c?"on":""}" href="shop.html?cat=${encodeURIComponent(c)}">${esc(c)}</a>`).join("")}
+    </div>
+    <select class="cat-select-mobile" id="catSel">
+      <option value="" ${cat?"":"selected"}>كل المنتجات</option>
+      ${STORE.settings.cats.map(c=>`<option value="${esc(c)}" ${cat===c?"selected":""}>${esc(c)}</option>`).join("")}
+    </select>
+    <div>
+      <input id="sq" placeholder="🔍 بحث" value="${esc(q)}" style="margin-bottom:12px">
+      <h3 style="font-weight:400;margin:0 0 10px">${esc(cat||"كل المنتجات")}</h3>
+      <div class="grid">${list.map(cardHTML).join("")||'<div class="empty" style="grid-column:1/-1">منتجات جديدة قريباً!</div>'}</div>
+    </div>
+  </div>`;
+  let t;$("#sq").oninput=e=>{clearTimeout(t);const v=e.target.value;t=setTimeout(()=>{const u=new URL(location);v?u.searchParams.set("q",v):u.searchParams.delete("q");history.replaceState(null,"",u)},300)};
+  $("#sq").onkeydown=e=>{if(e.key==="Enter"){const u=new URL(location);u.searchParams.set("q",e.target.value);location.href=u}};
+  $("#catSel").onchange=e=>{location.href=e.target.value?"shop.html?cat="+encodeURIComponent(e.target.value):"shop.html"};
+}
+(async()=>{await loadStore();chrome("shop");render()})();
+</script>
+</body>
+</html>
