@@ -25,7 +25,6 @@ function tiles(){
     return `<a class="tile" href="shop.html?cat=${encodeURIComponent(c)}" ${img?`style="background-image:url(${img})"`:""}>${soon?'<span class="soon">قريباً</span>':""}
       <div class="tile-overlay">
         <div class="tile-name">${esc(c)}</div>
-        <div class="tile-count">${count} منتج</div>
         <span class="tile-btn">تسوق الآن</span>
       </div>
     </a>`;
@@ -52,8 +51,8 @@ function tiles(){
     <div class="grid">${STORE.products.slice(-4).reverse().map(cardHTML).join("")||'<div class="empty">منتجات جديدة قريباً!</div>'}</div>`;
   const track=$("#catTrack");
   const step=()=>track.clientWidth*0.9;
-  $("#catPrev").onclick=()=>track.scrollBy({left:-step(),behavior:"smooth"});
-  $("#catNext").onclick=()=>track.scrollBy({left:step(),behavior:"smooth"});
+  $("#catPrev").onclick=()=>track.scrollBy({left:step(),behavior:"smooth"});
+  $("#catNext").onclick=()=>track.scrollBy({left:-step(),behavior:"smooth"});
 })();
 </script>
 </body>
