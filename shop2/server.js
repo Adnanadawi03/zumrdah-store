@@ -133,7 +133,7 @@ function serveStatic(req,res,pathname){
     if(req.headers["x-forwarded-proto"]==="https")headers["Strict-Transport-Security"]="max-age=15552000; includeSubDomains";
     if(ext===".html"){
       const nonce=crypto.randomBytes(16).toString("base64");
-      headers["Content-Security-Policy"]=`default-src 'self'; script-src 'self' 'nonce-${nonce}' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://www.google-analytics.com; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://*.google-analytics.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'`;
+      headers["Content-Security-Policy"]=`default-src 'self'; script-src 'self' 'nonce-${nonce}' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://www.google-analytics.com; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://*.google-analytics.com https://www.googletagmanager.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'`;
       res.writeHead(200,headers);
       return res.end(data.toString("utf8").replace(/<script>/g,`<script nonce="${nonce}">`));
     }
