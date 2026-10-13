@@ -17,10 +17,20 @@ const mkTok=()=>{const e=Date.now()+7*864e5;return e+"."+sign(""+e)};
 const okTok=t=>{if(!t)return false;const[e,s]=t.split(".");return s&&+e>Date.now()&&s.length===64&&crypto.timingSafeEqual(Buffer.from(s),Buffer.from(sign(e)))};
 const cookie=r=>Object.fromEntries((r.headers.cookie||"").split(";").map(x=>x.trim().split("=")).filter(x=>x[0]));
 const isAdmin=r=>okTok(cookie(r).adm);
-const hits={};const limit=(k,max,ms)=>{const n=Date.now();hits[k]=(hits[k]||[]).filter(t=>n-t<ms);if(hits[k].length>=max)return false;hits[k].push(n);return true};
-const send=(res,c,o,h={})=>{res.writeHead(c,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store",...h});res.end(JSON.stringify(o))};
+const TRUST_PROXY=process.env.TRUST_PROXY==="1";
+const clientIp=req=>TRUST_PROXY&&req.headers["x-forwarded-for"]?req.headers["x-forwarded-for"].split(",")[0].trim():req.socket.remoteAddress;
+const hits={};let sweeps=0;
+const limit=(k,max,ms)=>{
+  const n=Date.now();hits[k]=(hits[k]||[]).filter(t=>n-t<ms);
+  if(hits[k].length>=max)return false;
+  hits[k].push(n);
+  if(++sweeps%500===0)for(const key in hits)if(!hits[key].length)delete hits[key];
+  return true;
+};
+const send=(res,c,o,h={})=>{res.writeHead(c,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff",...h});res.end(JSON.stringify(o))};
 const body=r=>new Promise((ok,no)=>{let b="",n=0;r.on("data",c=>{n+=c.length;if(n>3e6){no(new Error("big"));r.destroy()}else b+=c});r.on("end",()=>{try{ok(JSON.parse(b||"{}"))}catch(e){no(e)}})});
 const str=(v,n)=>typeof v==="string"?v.trim().slice(0,n):"";
+const safeUrl=(v,n)=>{const s=str(v,n);return s&&/^https:\/\//i.test(s)?s:""};
 const num=v=>Number.isFinite(+v)&&+v>=0&&+v<100000?+(+v).toFixed(2):null;
 const sha=s=>crypto.createHash("sha256").update(s).digest("hex");
 
@@ -32,11 +42,11 @@ function cleanStock(v){
 function cleanProduct(b,old){
   const name=str(b.name,120),price=num(b.price);if(!name||price===null)return null;
   return{name,price,stock:cleanStock(b.stock),cat:str(b.cat,60),ts:old?.ts||Date.now(),
-    imgs:(Array.isArray(b.imgs)?b.imgs:[]).filter(s=>typeof s==="string"&&/^data:image\/(jpeg|png|webp);base64,/.test(s)&&s.length<400000).slice(0,3),
+    imgs:(Array.isArray(b.imgs)?b.imgs:[]).filter(s=>typeof s==="string"&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=?=?$/.test(s)&&s.length<400000).slice(0,3),
     addons:(Array.isArray(b.addons)?b.addons:[]).slice(0,20).map(a=>({name:str(a.name,80),price:num(a.price)||0})).filter(a=>a.name)};
 }
 async function api(req,res,url){
-  const m=req.method,p=url.pathname,ip=req.socket.remoteAddress+(req.headers["x-forwarded-for"]||"");
+  const m=req.method,p=url.pathname,ip=clientIp(req);
   if(m==="GET"&&p==="/api/store")return send(res,200,{products:D.products,delivery:{...GOV,...D.delivery},settings:D.settings});
   if(m==="GET"&&p==="/api/me")return send(res,200,{admin:isAdmin(req)});
   if(m==="POST"&&p==="/api/login"){
@@ -83,11 +93,11 @@ async function api(req,res,url){
       for(const c of cats){
         const v=b.catImages[c];
         if(typeof v!=="string")continue;
-        if(/^data:image\/(jpeg|png|webp);base64,/.test(v)&&v.length<400000)catImages[c]=v;
+        if(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=?=?$/.test(v)&&v.length<400000)catImages[c]=v;
         else if(/^\/categories\/[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp)$/.test(v))catImages[c]=v;
       }
     }
-    D.settings={name:str(b.name,60)||"متجري",tag:str(b.tag,120),promo:str(b.promo,120),code:str(b.code,40),pct:Math.min(100,+b.pct||0),phone:str(b.phone,20),fb:str(b.fb,300),ig:str(b.ig,300),tiktok:str(b.tiktok,300),catImages,cats};
+    D.settings={name:str(b.name,60)||"متجري",tag:str(b.tag,120),promo:str(b.promo,120),code:str(b.code,40),pct:Math.min(100,+b.pct||0),phone:str(b.phone,20).replace(/[^\d+\s]/g,""),fb:safeUrl(b.fb,300),ig:safeUrl(b.ig,300),tiktok:safeUrl(b.tiktok,300),catImages,cats};
     persist();return send(res,200,{ok:true});
   }
   let r=p.match(/^\/api\/(products|orders)\/([a-z0-9]+)$/);
@@ -110,7 +120,8 @@ async function api(req,res,url){
 
 const MIME={".html":"text/html; charset=utf-8",".js":"application/javascript; charset=utf-8",".css":"text/css; charset=utf-8",".png":"image/png",".jpg":"image/jpeg",".svg":"image/svg+xml",".ico":"image/x-icon",".json":"application/json"};
 function serveStatic(req,res,pathname){
-  let rel=decodeURIComponent(pathname);
+  // pathname already URL-decoded مرة وحدة من WHATWG URL parser
+  let rel=pathname;
   if(rel==="/")rel="/index.html";
   if(rel.endsWith("/"))rel+="index.html";
   const fp=path.normalize(path.join(PUBLIC,rel));
@@ -118,7 +129,15 @@ function serveStatic(req,res,pathname){
   fs.readFile(fp,(err,data)=>{
     if(err){res.writeHead(404,{"Content-Type":"text/html; charset=utf-8"});return res.end("<h1>404</h1><p>الصفحة غير موجودة. <a href=\"/\">الرئيسية</a></p>")}
     const ext=path.extname(fp).toLowerCase();
-    res.writeHead(200,{"Content-Type":MIME[ext]||"application/octet-stream","X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY",...(ext===".html"?{"Cache-Control":"no-store"}:{"Cache-Control":"public, max-age=3600"})});
+    const headers={"Content-Type":MIME[ext]||"application/octet-stream","X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY","Referrer-Policy":"strict-origin-when-cross-origin",...(ext===".html"?{"Cache-Control":"no-store"}:{"Cache-Control":"public, max-age=3600"})};
+    if(req.headers["x-forwarded-proto"]==="https")headers["Strict-Transport-Security"]="max-age=15552000; includeSubDomains";
+    if(ext===".html"){
+      const nonce=crypto.randomBytes(16).toString("base64");
+      headers["Content-Security-Policy"]=`default-src 'self'; script-src 'self' 'nonce-${nonce}' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://www.google-analytics.com; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://*.google-analytics.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'`;
+      res.writeHead(200,headers);
+      return res.end(data.toString("utf8").replace(/<script>/g,`<script nonce="${nonce}">`));
+    }
+    res.writeHead(200,headers);
     res.end(data);
   });
 }
