@@ -40,7 +40,8 @@ header .cta:hover{background:#fff;color:var(--tx);border-color:#fff}
 .tile:hover{transform:translateY(-4px);box-shadow:0 10px 24px rgba(59,29,42,.25)}
 .tile .soon{position:absolute;top:26px;left:-42px;width:160px;text-align:center;background:#d3899b;color:#fff;font-size:12px;font-weight:600;letter-spacing:1px;padding:6px 0;transform:rotate(-45deg);transform-origin:center;box-shadow:0 3px 8px rgba(0,0,0,.3);z-index:2}
 .tile-overlay{position:absolute;left:0;right:0;bottom:0;padding:18px 14px 20px;text-align:center;background:linear-gradient(to top,rgba(0,0,0,.72) 0%,rgba(0,0,0,.4) 55%,rgba(0,0,0,0) 100%)}
-.tile-name{font-family:'Libre Baskerville',Georgia,serif;font-weight:400;font-size:19px;letter-spacing:.4px;margin-bottom:14px;text-shadow:0 2px 6px rgba(0,0,0,.55)}
+.tile-name{font-size:16px;font-weight:700;margin-bottom:3px;text-shadow:0 2px 6px rgba(0,0,0,.55)}
+.tile-count{font-size:12px;opacity:.9;margin-bottom:12px;text-shadow:0 2px 5px rgba(0,0,0,.55)}
 .tile-btn{display:inline-block;background:var(--ac);color:#fff;padding:7px 20px;border-radius:5px;font-size:12px;font-weight:600}
 .cat-carousel{max-width:980px;margin:34px auto 10px}
 .cat-carousel-head{display:flex;justify-content:flex-start;gap:8px;margin-bottom:12px}

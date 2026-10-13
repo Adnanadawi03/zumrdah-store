@@ -3,7 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>متجري</title>
+<title>Zumrdah | متجر زمردة</title>
+<meta name="description" content="لأن جمالكِ يستحق التميّز — تسوقي أحدث منتجات العطور والمكياج والعناية من Zumrdah.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Zumrdah | متجر زمردة">
+<meta property="og:description" content="لأن جمالكِ يستحق التميّز — تسوقي أحدث منتجات العطور والمكياج والعناية من Zumrdah.">
+<meta property="og:image" content="/logo.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
@@ -25,6 +31,7 @@ function tiles(){
     return `<a class="tile" href="shop.html?cat=${encodeURIComponent(c)}" ${img?`style="background-image:url(${img})"`:""}>${soon?'<span class="soon">قريباً</span>':""}
       <div class="tile-overlay">
         <div class="tile-name">${esc(c)}</div>
+        <div class="tile-count">${count} منتج</div>
         <span class="tile-btn">تسوق الآن</span>
       </div>
     </a>`;

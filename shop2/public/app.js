@@ -36,12 +36,12 @@ function chrome(active){
     <div class="icons">
       <a href="shop.html" aria-label="بحث" title="بحث">${ICON.search}</a>
       <a href="cart.html" aria-label="السلة" title="السلة" style="position:relative">${ICON.cart}<span id="cc" style="position:absolute;top:-8px;left:-10px;background:var(--ac);color:var(--ac2);border-radius:99px;font-size:10px;min-width:15px;text-align:center;line-height:15px">${cartCount()}</span></a>
-      <a class="cta" href="https://wa.me/962795360292" target="_blank" rel="noopener">تواصل معنا</a>
+      <a class="cta" href="https://wa.me/962795360292" target="_blank" rel="noopener">تواصل معنا على واتساب</a>
       <button class="hamburger" id="hamBtn" aria-label="القائمة"><span></span><span></span><span></span></button>
     </div>
     <div class="mobile-menu" id="mobileMenu">
       ${nav.map(([href,label,key])=>`<a href="${href}" class="${active===key?"on":""}">${label}</a>`).join("")}
-      <a class="cta" href="https://wa.me/962795360292" target="_blank" rel="noopener">تواصل معنا</a>
+      <a class="cta" href="https://wa.me/962795360292" target="_blank" rel="noopener">تواصل معنا على واتساب</a>
     </div>`;
   const hamBtn=$("#hamBtn"),menu=$("#mobileMenu");
   hamBtn.onclick=()=>{hamBtn.classList.toggle("open");menu.classList.toggle("open")};
